@@ -9,6 +9,7 @@ Author: told us to **BUILD MALICIOUS APP** that means we need to analyze **VULN 
 if the objective is not **BUILD MALICIOUS APP** we can straight forward into **Java Package Analyze**
 
 ![Android Manifest](image/WRITEUP/1725867158341.png)
+
 As you can see in the last point
 Android manifest declares the permissions application which one can be used by another package.
 
