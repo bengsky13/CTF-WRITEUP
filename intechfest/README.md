@@ -215,6 +215,7 @@ Result of logger
 ![1725870270865](image/WRITEUP/1725870270865.png)
 
 Let's try insert 558102 into flag_checker
+
 ![1725870311151](image/WRITEUP/1725870311151.png)
 
 ## FLAG
@@ -330,6 +331,7 @@ so the **`Global.java`** will be stored in the dex file and we can load it using
 **`dalvik.system.DexClassLoader`**
 
 so here is the MaliciousApp Flow
+
 ![Diagram](image/WRITEUP/diagram.png) 
 
 ## SOLVER
@@ -428,7 +430,7 @@ public class MainActivity extends AppCompatActivity {
 ## FLAG
 `INTECHFEST{remember_kids_never_hardcode_a_secret_in_your_code}`
 
-# Password Manager [100 PTS] (UPSOLVED)
+# Password Manager [1000 PTS] (UPSOLVED)
 
 ## OBJECTIVE
 <h3>BRIEF</h3>
