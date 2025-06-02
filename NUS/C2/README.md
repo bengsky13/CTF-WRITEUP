@@ -4,8 +4,9 @@
 
 The challenge provides a Go-based C2 server handling agent registration, code execution, and flag retrieval. Key points from the original code:
 
-## Source Code Overview and Key Snippets
-### - Agent Registration (/register endpoint):
+## Source Code Overview
+
+### /register
 
 Accepts JSON data with an "agentUrl" and other agent info, then runs:
 
@@ -15,7 +16,7 @@ cmd := exec.Command("curl", "-sSL", agent.AgentUrl)
 
 This makes the server perform an HTTP(S) request to the agent’s URL to verify connectivity.
 
-### - Agent Commands (/agent/{id}/execute endpoint):
+### /agent/{id}/execute endpoint (Admin Only)
 Allows POSTing Go source code, which the server compiles (go build) and then uploads the binary to the agent’s URL /exec endpoint using:
 
 ```go
@@ -23,6 +24,25 @@ err = executeCommandWithTimeout("go", "build", "-ldflags", "-s -w", "-o", binNam
 
 err = executeCommandWithTimeout("curl", "-T", binName, agentExecUrl)
 ```
+but it only allow request from internal `localhost`
+
+### Middleware Admin Only
+
+Requests to sensitive endpoints like `/agent/{id}` and `/agent/{id}/execute` are filtered by middleware that allows access only if the request comes from `localhost` (`127.0.0.1` or `::1`). This is a security control to prevent external exploitation.
+
+```go
+func adminOnly(next http.HandlerFunc) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !isLocalhost(r) {
+			w.WriteHeader(http.StatusUnauthorized)
+			fmt.Fprintln(w, "Only admins can access this page!")
+			return
+		}
+		next(w, r)
+	})
+}
+```
+
 
 ## Vulnerabilities & Technical Analysis
 
