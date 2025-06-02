@@ -12,3 +12,4 @@ Authors @bengsky
 - [Cyber Apocalypse 2024 HackTheBox - WEB APEX](HTB2024/web_apex.md)
 - [WU_CYBER OPS CLASH Quals - [470 pts] 📝 Writeup](COC/wu_qual.md)
 - [Intechfest 2024 Mobile](intechfest/README.md)
+- [NUS Grey Cat The Flag 2025 - C2](NUS/C2/README.md)
