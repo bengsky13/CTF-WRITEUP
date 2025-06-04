@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package flag;
+
+import "google/protobuf/empty.proto";
+
+service Flag {
+  rpc Hello(google.protobuf.Empty) returns (HelloReply);
+  rpc GetFlag(FlagRequest) returns (FlagReply);
+}
+
+message HelloReply {
+  string message = 1;
+}
+
+message FlagRequest {
+  // required fixed64 last_condition = 1 [default = 3141592654];
+  fixed64 last_condition = 1; // fixed64 maps to uint64 in proto3
+
+  // required string first_condition = 2 [default = "TraLaLeRo TraLaLa"];
+  string first_condition = 2;
+
+  // required bytes second_condition = 3 [default = "cafebabe"];
+  bytes second_condition = 3;
+}
+
+message FlagReply {
+  string flag = 1;
+}
