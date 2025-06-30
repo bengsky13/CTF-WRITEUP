@@ -13,3 +13,4 @@ Authors @bengsky
 - [WU_CYBER OPS CLASH Quals - [470 pts] 📝 Writeup](COC/wu_qual.md)
 - [Intechfest 2024 Mobile](intechfest/README.md)
 - [NUS Grey Cat The Flag 2025](NUS/README.md)
+- [Try Hack Me Industrial Intrusion CTF (Mechacore Inventory | Web Exploitation Insane)](Industrial-Intrusion/README.md)
