@@ -80,8 +80,8 @@ md5(f"{caller}_{timestamp}")[:2]
 ```
 - Send a real DNS query for the internal domain, triggering outbound recursive resolution.
 - Race the resolver with:
-- - A fake NS referral pointing to 127.0.0.1
-- - A fake A record resolving the internal subdomain to 127.0.0.1
+  - A fake NS referral pointing to 127.0.0.1
+  - A fake A record resolving the internal subdomain to 127.0.0.1
 - Query the TXT record — the server thinks the internal domain belongs to you and reveals the flag.
 
 Exploit Script Summary
