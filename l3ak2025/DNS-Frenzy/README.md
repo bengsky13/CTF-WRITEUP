@@ -11,7 +11,7 @@ We’re given a target DNS server at 34.134.162.213, with two key UDP ports:
 
 # Analysis
 
-This challenge is inspired by Kaminsky DNS cache poisoning, with the following twist:
+This challenge is DNS cache poisoning, with the following twist:
 
 1. The server uses a predictable Transaction ID (TID) based on:
 
