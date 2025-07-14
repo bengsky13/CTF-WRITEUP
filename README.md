@@ -14,4 +14,4 @@ Authors @bengsky
 - [Intechfest 2024 Mobile](intechfest/README.md)
 - [NUS Grey Cat The Flag 2025](NUS/README.md)
 - [Try Hack Me Industrial Intrusion CTF (Mechacore Inventory | Web Exploitation Insane)](Industrial-Intrusion/README.md)
-- [L3akCTF - 2025 | DNS Freenzy](l3ak2025/DNS-Freenzy/README.md)
+- [L3akCTF - 2025 | DNS Freenzy](l3ak2025/DNS-Frenzy/README.md)
